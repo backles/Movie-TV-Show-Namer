@@ -1,6 +1,5 @@
 import logging
 import re
-import glob
 import os
 import string
 import shutil
@@ -8,14 +7,28 @@ import sys
 from xml.dom import minidom
 
 
-def moveMovie(readDirectory, movieDirectory, fileName):
+def moveMovie(origName, readDirectory, movieDirectory, fileName):
     print("Is Movie")
     #shutil.move(readDirectory + fileName, movieDirectory + fileName)
 
-def moveTVShow(readDirectory, tVsDirectoryDirectory, fileName):
-    print("Is TVshow")
-    #shutil.move(readDirectory + fileName, tVsDirectoryDirectory + fileName)
-	
+def moveTVShow(origName, readDirectory, tVsDirectory, fileName , tvName, season):
+    fileName = fileName + ".mp4"
+    showDirectory = tVsDirectory + "/" + tvName
+    seasonDirectory = showDirectory + "/" + "Season " + season
+    while True:
+        if os.path.isdir(tVsDirectory):
+            if os.path.isdir(showDirectory):
+                if os.path.isdir(seasonDirectory):
+                    print("Moving File: " + fileName)
+                    shutil.move(readDirectory + '/' + origName, seasonDirectory + '/' + fileName)
+                    break
+                else:
+                    os.makedirs(seasonDirectory)
+            else:
+                os.makedirs(showDirectory)
+        else:
+            os.makedirs(tVsDirectory)
+
 def getAllMP4(readDirectory, movieDirectory, tVsDirectory, files):
     for file in files:
         originalFile = file
@@ -25,14 +38,16 @@ def getAllMP4(readDirectory, movieDirectory, tVsDirectory, files):
                 file = file.replace(".", " ")											#remove period
             fileStringName = file.split()												#splits the string to look for movie or TV show
             length = len(fileStringName)
-            makeGoodName(originalFile, file)
-            #if tvRE(fileStringName[length - 1]) == 1:
-            #    moveTVShow(readDirectory, tVsDirectory, originalFile)
-            #else: 																			#Else if Movie
-            #    moveMovie(readDirectory, movieDirectory, originalFile)
+            newName, tvName, season = makeGoodName(file)
+            tmp = newName.split()
+            length = len(tmp)
+            if tvRE(tmp[length - 1]) == 1:
+                moveTVShow(originalFile, readDirectory, tVsDirectory, newName, tvName, season)
+            else: 																			#Else if Movie
+                moveMovie(originalFile, readDirectory, movieDirectory, newName)
 
-def makeGoodName(origfile, file):
-    print("Original " + file)
+def makeGoodName(file):
+    #print("     Name Before: " + file)
     file = file.replace(".", " ")
     fileStringName = file.split()
     n = 0
@@ -45,26 +60,38 @@ def makeGoodName(origfile, file):
             n = n + 1
     if n == None:
         print("Should be movie")
-        shortName = file # temporary
     else:
         lengthToShorten = (len(fileStringName)- n-1)
         if lengthToShorten == 0:
             shortName = fileStringName
-            shortName = ''.join(shortName)
         else:
             shortName = fileStringName[:-lengthToShorten]
-            shortName = ''.join(shortName)
-    print("Short name " + shortName)
-
+    tvName = ""
+    for item in shortName[:-1]:
+        tvName = tvName + item
+        if item != shortName[-1]:
+            tvName = tvName + " "
+        #print("TV Show Name: " + tvName)
+    newFileName = ""
+    for element in shortName:
+        newFileName = newFileName + element
+        if element != shortName[-1]:
+            newFileName = newFileName + " "
+            #print(newFileName)
+    season = shortName.pop()
+    season = re.search('S(.*)E', season)
+    #print("Season: " + season.group(1))
+    #print("     Name After: " + newFileName)
+    return newFileName, tvName.rstrip(), season.group(1)
 
 def getDirectoriesandSettings():
-	xmldoc = minidom.parse('settings.xml')
-	itemlist = xmldoc.getElementsByTagName('item')
-	readDirectory = itemlist[0].attributes['locationToMoveFrom'].value
-	movieDirectory = itemlist[1].attributes['locationToMoveMoviesTo'].value
-	tVsDirectory = itemlist[2].attributes['locationToMoveTVTo'].value
-	files = os.listdir(readDirectory)
-	return readDirectory, movieDirectory, tVsDirectory, files
+    xmldoc = minidom.parse('settings.xml')
+    itemlist = xmldoc.getElementsByTagName('item')
+    readDirectory = itemlist[0].attributes['locationToMoveFrom'].value
+    movieDirectory = itemlist[1].attributes['locationToMoveMoviesTo'].value
+    tVsDirectory = itemlist[2].attributes['locationToMoveTVTo'].value
+    files = os.listdir(readDirectory)
+    return readDirectory, movieDirectory, tVsDirectory, files
 
 def tvRE(itemString):
     if re.match("(^[S][0-9][0-9][E][0-9][0-9])", itemString):
@@ -83,7 +110,6 @@ def tvRE(itemString):
         return 1
     elif re.match("(^[s][0-9][e][0-9][0-9])", itemString):
         return 1
-
 
 def main():
     cmdArgs = len(sys.argv)

@@ -8,7 +8,7 @@ from xml.dom import minidom
 
 
 def moveMovie(origName, readDirectory, movieDirectory, fileName):
-    print("Is Movie")
+    print("Is Movie: " + fileName)
     #shutil.move(readDirectory + fileName, movieDirectory + fileName)
 
 def moveTVShow(origName, readDirectory, tVsDirectory, fileName , tvName, season):
@@ -20,7 +20,8 @@ def moveTVShow(origName, readDirectory, tVsDirectory, fileName , tvName, season)
             if os.path.isdir(showDirectory):
                 if os.path.isdir(seasonDirectory):
                     print("Moving File: " + fileName)
-                    shutil.move(readDirectory + '/' + origName, seasonDirectory + '/' + fileName)
+                    shutil.copy(readDirectory + '/' + origName, seasonDirectory + '/' + fileName)   #copy
+                    #shutil.move(readDirectory + '/' + origName, seasonDirectory + '/' + fileName)  #cut
                     break
                 else:
                     os.makedirs(seasonDirectory)
@@ -60,6 +61,7 @@ def makeGoodName(file):
             n = n + 1
     if n == None:
         print("Should be movie")
+        return
     else:
         lengthToShorten = (len(fileStringName)- n-1)
         if lengthToShorten == 0:
@@ -94,21 +96,33 @@ def getDirectoriesandSettings():
     return readDirectory, movieDirectory, tVsDirectory, files
 
 def tvRE(itemString):
-    if re.match("(^[S][0-9][0-9][E][0-9][0-9])", itemString):
+    if re.match("(^[S][0-9][0-9][E][0-9][0-9])", itemString):               #anything S01E01
         return 1
-    elif re.match("(^[S][0-9][E][0-9])", itemString):
+    elif re.match("(^[S][0-9][E][0-9])", itemString):                       #anything S1E1
         return 1
-    elif re.match("(^[S][0-9][0-9][E][0-9])", itemString):
+    elif re.match("(^[S][0-9][0-9][E][0-9])", itemString):                  #anything S01E1
         return 1
-    elif re.match("(^[S][0-9][E][0-9][0-9])", itemString):
+    elif re.match("(^[S][0-9][E][0-9][0-9])", itemString):                  #anything S1E01
         return 1
-    elif re.match("(^[s][0-9][0-9][e][0-9][0-9])", itemString):
+    elif re.match("(^[s][0-9][0-9][e][0-9][0-9])", itemString):             #anything s01e01
         return 1
-    elif re.match("(^[s][0-9][e][0-9])", itemString):
+    elif re.match("(^[s][0-9][e][0-9])", itemString):                       #anything s1E1
         return 1
-    elif re.match("(^[s][0-9][0-9][e][0-9])", itemString):
+    elif re.match("(^[s][0-9][0-9][e][0-9])", itemString):                  #anything s01e1
         return 1
-    elif re.match("(^[s][0-9][e][0-9][0-9])", itemString):
+    elif re.match("(^[s][0-9][e][0-9][0-9])", itemString):                  #anything s01e01
+        return 1
+    elif re.match("(^([S][0-9][0-9][_][E][0-9][0-9]))", itemString):        #anything S01_E01
+        return 1
+    elif re.match("(^([S][0-9][_][E][0-9]))", itemString):                  #anything S1_E1
+        return 1
+    elif re.match("(^([s][0-9][0-9][_][e][0-9][0-9]))", itemString):        #anything s01_e01
+        return 1
+    elif re.match("(^([s][0-9][_][e][0-9]))", itemString):                  #anything s1_e1
+        return 1
+    elif re.match("(^[0-9][x][0-9][0-9])", itemString):                     #anything 1x01
+        return 1
+    elif re.match("(^[0-9][x][0-9])", itemString):                          #anything 1x1
         return 1
 
 def main():
